@@ -1,7 +1,7 @@
 # Fly.io configuration for PAN / Aadhaar Format Validator
 # Docs: https://fly.io/docs/reference/configuration/
 app = "pan-aadhaar-validator"
-primary_region = "bom"
+primary_region = "sin"
 
 [http_service]
   internal_port = 8080
