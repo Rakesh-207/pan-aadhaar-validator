@@ -106,6 +106,7 @@ function renderEmpty() {
   $("empty").classList.remove("hidden");
   $("result").classList.add("hidden");
   $("preview").classList.add("hidden");
+  clearExtraction();
 }
 
 function renderLoading() {
@@ -200,6 +201,7 @@ function renderError() {
 async function validate() {
   const value = $("value").value;
   const seq = ++inFlight;
+  clearExtraction();
   renderLoading();
   try {
     const res = await fetch("/api/validate", {
@@ -209,6 +211,130 @@ async function validate() {
     });
     const data = await res.json();
     if (seq === inFlight) render(data);
+  } catch (e) {
+    if (seq === inFlight) renderError();
+  }
+}
+
+/* ---------- Image extraction ---------- */
+let selectedFile = null;
+let objectUrl = null;
+const ALLOWED_IMG = ["image/png", "image/jpeg"];
+const MAX_IMG = 5 * 1024 * 1024;
+
+function formatBytes(n) {
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n / 1024).toFixed(1) + " KB";
+  return (n / 1048576).toFixed(1) + " MB";
+}
+
+function setImageFile(file) {
+  if (!file) return;
+  if (!ALLOWED_IMG.includes(file.type)) {
+    showDropError("Unsupported file type. Use PNG or JPEG.");
+    return;
+  }
+  if (file.size > MAX_IMG) {
+    showDropError("File too large. Maximum 5MB.");
+    return;
+  }
+  clearDropError();
+  selectedFile = file;
+  $("dz-title").textContent = file.name;
+  $("dz-sub").textContent = formatBytes(file.size) + " \u2014 processed transiently, never stored";
+  if (objectUrl) URL.revokeObjectURL(objectUrl);
+  objectUrl = URL.createObjectURL(file);
+  const thumb = $("dz-thumb");
+  thumb.style.backgroundImage = "url('" + objectUrl + "')";
+  thumb.classList.remove("hidden");
+  $("dropzone").classList.add("has-file");
+  $("extract").disabled = false;
+}
+
+function clearImage() {
+  selectedFile = null;
+  if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+  $("image-file").value = "";
+  $("dz-title").textContent = "Drop a PAN / Aadhaar image";
+  $("dz-sub").textContent = "PNG or JPEG, up to 5MB \u2014 processed transiently, never stored";
+  $("dz-thumb").classList.add("hidden");
+  $("dz-thumb").style.backgroundImage = "";
+  $("dropzone").classList.remove("has-file", "drop-error", "drag");
+  $("extract").disabled = true;
+}
+
+function showDropError(msg) {
+  selectedFile = null;
+  $("dz-title").textContent = msg;
+  $("dz-sub").textContent = "PNG or JPEG, up to 5MB";
+  $("dz-thumb").classList.add("hidden");
+  $("dropzone").classList.add("drop-error");
+  $("dropzone").classList.remove("has-file");
+  $("extract").disabled = true;
+}
+
+function clearDropError() {
+  $("dropzone").classList.remove("drop-error");
+}
+
+function renderExtraction(ext) {
+  if (!ext) { clearExtraction(); return; }
+  const block = $("extraction");
+  block.classList.remove("hidden");
+  $("ex-type").textContent = ext.extractedType || "UNKNOWN";
+  $("ex-conf").textContent = (ext.confidence || "").toLowerCase()
+    ? ext.confidence + " confidence" : "";
+  $("ex-value").textContent = ext.value || "\u2014";
+  const warn = $("ex-warn");
+  if (ext.typeMismatch) {
+    warn.textContent = "hint (" + (ext.hintType || "").toLowerCase()
+      + ") differs from detected (" + (ext.extractedType || "").toLowerCase() + ")";
+    warn.classList.remove("hidden");
+  } else {
+    warn.classList.add("hidden");
+  }
+}
+
+function clearExtraction() {
+  $("extraction").classList.add("hidden");
+}
+
+function renderExtractionError(data) {
+  $("empty").classList.add("hidden");
+  $("result").classList.remove("hidden");
+  const verdict = $("verdict");
+  verdict.className = "verdict bad";
+  $("v-icon").innerHTML = ICONS.bad;
+  $("v-status").textContent = "Extraction failed";
+  $("v-reason").classList.add("hidden");
+  $("v-message").textContent = (data && data.error)
+    ? data.error
+    : "Could not extract a document number from the image.";
+  $("checks").innerHTML = "";
+}
+
+async function extractAndValidate() {
+  if (!selectedFile) return;
+  const seq = ++inFlight;
+  clearExtraction();
+  renderLoading();
+  try {
+    const res = await fetch("/api/extract-and-validate?hint=" + encodeURIComponent(type), {
+      method: "POST",
+      headers: { "Content-Type": selectedFile.type },
+      body: selectedFile
+    });
+    const data = await res.json();
+    if (seq !== inFlight) return;
+    if (!res.ok) {
+      renderExtractionError(data);
+      return;
+    }
+    render(data);
+    const extracted = data.extraction || {};
+    $("value").value = extracted.value || data.originalValue || "";
+    syncInputState();
+    renderExtraction(extracted);
   } catch (e) {
     if (seq === inFlight) renderError();
   }
@@ -249,6 +375,20 @@ document.addEventListener("DOMContentLoaded", () => {
     renderEmpty();
     input.focus();
   });
+
+  $("image-file").addEventListener("change", (e) => setImageFile(e.target.files[0]));
+  const dz = $("dropzone");
+  dz.addEventListener("dragover", (e) => { e.preventDefault(); dz.classList.add("drag"); });
+  dz.addEventListener("dragleave", () => dz.classList.remove("drag"));
+  dz.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dz.classList.remove("drag");
+    if (e.dataTransfer.files && e.dataTransfer.files.length) {
+      setImageFile(e.dataTransfer.files[0]);
+    }
+  });
+  $("extract").addEventListener("click", extractAndValidate);
+  $("img-clear").addEventListener("click", () => { clearImage(); });
 
   setType("pan");
 });

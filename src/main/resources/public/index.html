@@ -78,12 +78,42 @@
           </div>
         </form>
 
+        <div class="img-divider" role="separator" aria-label="Alternative input"><span>or extract from an image</span></div>
+
+        <section class="img-upload" aria-label="Extract a document number from an image">
+          <label class="dropzone" for="image-file" id="dropzone">
+            <input id="image-file" type="file" accept="image/png,image/jpeg" hidden />
+            <span class="dz-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M12 15V4m0 0L8.5 7.5M12 4l3.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 14v4.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            </span>
+            <span class="dz-body">
+              <span class="dz-title" id="dz-title">Drop a PAN / Aadhaar image</span>
+              <span class="dz-sub" id="dz-sub">PNG or JPEG, up to 5MB &mdash; processed transiently, never stored</span>
+            </span>
+            <span class="dz-thumb hidden" id="dz-thumb" aria-hidden="true"></span>
+          </label>
+          <div class="img-actions">
+            <button id="extract" class="btn primary" type="button" disabled>Extract &amp; validate</button>
+            <button id="img-clear" class="btn tertiary" type="button">Clear image</button>
+          </div>
+        </section>
+
         <div id="preview" class="preview hidden">
           <span class="preview-label">Normalized value</span>
           <code id="normalized"></code>
         </div>
 
         <div class="outcome" id="outcome" aria-live="polite" aria-atomic="false">
+          <div class="extraction hidden" id="extraction">
+            <div class="ex-head">
+              <span class="ex-badge" id="ex-type">PAN</span>
+              <span class="ex-conf" id="ex-conf"></span>
+              <span class="ex-warn hidden" id="ex-warn"></span>
+            </div>
+            <code class="ex-value" id="ex-value"></code>
+            <p class="ex-note">Image processed transiently for extraction and not stored by this application.</p>
+          </div>
+
           <div class="empty" id="empty">
             <span class="empty-mark" aria-hidden="true">
               <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
