@@ -60,4 +60,20 @@ class JsonReaderTest {
         assertThrows(IllegalArgumentException.class,
                 () -> JsonReader.readObject(null));
     }
+
+    @Test
+    void rejectsTrailingContent() {
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonReader.readObject("{\"type\":\"pan\"} trailing"));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonReader.readObject("{\"type\":\"pan\"}{\"value\":\"x\"}"));
+        assertThrows(IllegalArgumentException.class,
+                () -> JsonReader.readObject("{\"type\":\"pan\"} junk"));
+    }
+
+    @Test
+    void acceptsTrailingWhitespace() {
+        Map<String, String> m = JsonReader.readObject("{\"type\":\"pan\"}   \n\t ");
+        assertEquals("pan", m.get("type"));
+    }
 }

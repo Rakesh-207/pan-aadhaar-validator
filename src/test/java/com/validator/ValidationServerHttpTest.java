@@ -92,6 +92,19 @@ class ValidationServerHttpTest {
     }
 
     @Test
+    void postRejectsTrailingGarbage() throws Exception {
+        HttpResponse<String> res = client.send(
+                HttpRequest.newBuilder()
+                        .uri(URI.create(base + "/api/validate"))
+                        .header("Content-Type", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofString(
+                                "{\"type\":\"pan\",\"value\":\"AFZPK7190K\"} trailing"))
+                        .build(),
+                HttpResponse.BodyHandlers.ofString());
+        assertEquals(400, res.statusCode());
+    }
+
+    @Test
     void unsupportedMethodIsNotAllowed() throws Exception {
         HttpResponse<String> res = client.send(
                 HttpRequest.newBuilder()

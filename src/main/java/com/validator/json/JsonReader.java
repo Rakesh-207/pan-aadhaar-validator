@@ -144,7 +144,13 @@ public final class JsonReader {
             throw new IllegalArgumentException("Null JSON body");
         }
         Map<String, String> out = new LinkedHashMap<>();
-        new JsonReader(json).parseObject(out);
+        JsonReader r = new JsonReader(json);
+        r.parseObject(out);
+        r.skipWs();
+        if (r.pos < r.s.length()) {
+            throw new IllegalArgumentException(
+                    "Trailing content after JSON object at position " + r.pos);
+        }
         return out;
     }
 }
