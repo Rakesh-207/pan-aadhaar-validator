@@ -18,6 +18,18 @@
     </properties>
 
     <dependencies>
+        <!--
+            Server-side verification of Google ID tokens (Sign in with Google).
+            google-api-client-gson:2.9.0 transitively brings in google-api-client,
+            google-http-client (+gson transport), guava, and google-oauth-client
+            at aligned versions. Used only for GoogleIdTokenVerifier signature /
+            audience / issuer / expiry checks; no other Google APIs are called.
+        -->
+        <dependency>
+            <groupId>com.google.api-client</groupId>
+            <artifactId>google-api-client-gson</artifactId>
+            <version>2.9.0</version>
+        </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
