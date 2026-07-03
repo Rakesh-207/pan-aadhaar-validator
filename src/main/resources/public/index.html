@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PAN / Aadhaar Format Validator</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">KYC</div>
+      <div>
+        <h1>PAN / Aadhaar Format Validator</h1>
+        <p class="tag">Deterministic format &amp; checksum validation &mdash; powered by Core Java</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <div class="segmented" role="tablist" aria-label="Document type">
+        <button class="seg active" role="tab" aria-selected="true" data-type="pan">PAN</button>
+        <button class="seg" role="tab" aria-selected="false" data-type="aadhaar">Aadhaar</button>
+      </div>
+
+      <form id="form" autocomplete="off" onsubmit="return false">
+        <label class="field">
+          <span id="label-value">Enter PAN</span>
+          <input id="value" type="text" inputmode="text" placeholder="e.g. AFZPK7190K" spellcheck="false" />
+        </label>
+
+        <div class="actions">
+          <button id="validate" class="primary" type="button">Validate</button>
+          <button id="clear" class="ghost" type="button">Clear</button>
+        </div>
+      </form>
+
+      <div id="preview" class="preview hidden">
+        <span class="preview-label">Normalized value</span>
+        <code id="normalized"></code>
+      </div>
+
+      <div id="result" class="result hidden">
+        <div class="verdict">
+          <span id="badge" class="badge"></span>
+          <div>
+            <div id="message" class="message"></div>
+            <div id="reason" class="reason"></div>
+          </div>
+        </div>
+        <ul id="checks" class="checks"></ul>
+      </div>
+
+      <section class="examples">
+        <h2 id="examples-title">PAN examples</h2>
+        <div id="examples" class="chips"></div>
+      </section>
+    </div>
+
+    <aside class="card subtle">
+      <h2>What is checked?</h2>
+      <div id="rules" class="rules"></div>
+    </aside>
+
+    <p class="disclaimer">
+      <strong>Disclaimer:</strong> Format validation is <em>not</em> identity verification.
+      This tool does not store, log, or persist entered numbers, and it cannot confirm whether
+      a number was actually issued by the Income Tax Department or UIDAI.
+    </p>
+  </main>
+
+  <footer class="footer">
+    <span>Core Java &bull; com.sun.net.httpserver &bull; Verhoeff checksum &bull; No database</span>
+  </footer>
+
+  <script src="/app.js"></script>
+</body>
+</html>
