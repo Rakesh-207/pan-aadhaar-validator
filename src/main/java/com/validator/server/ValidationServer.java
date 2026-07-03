@@ -39,7 +39,30 @@ public final class ValidationServer {
     }
 
     public static ValidationServer start(int port) throws IOException {
-        return start(port, buildDefaultExtractor());
+        boolean cloudEnabled = "true".equalsIgnoreCase(env("ENABLE_CLOUD_VISION", "false"));
+        return start(port, cloudEnabled);
+    }
+
+    /**
+     * Production entry point with an explicit cloud-vision toggle. When cloud
+     * vision is off (the default), the legacy image-upload endpoint is inert:
+     * it answers 503 / CLOUD_VISION_DISABLED and never builds an upstream HTTP
+     * client. Local browser OCR is the privacy-first default flow.
+     */
+    public static ValidationServer start(int port, boolean cloudEnabled) throws IOException {
+        HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+        server.createContext("/api/health", new HealthHandler());
+        server.createContext("/api/validate", new ValidateHandler());
+        if (cloudEnabled) {
+            server.createContext("/api/extract-and-validate",
+                    new ExtractHandler(buildDefaultExtractor()));
+        } else {
+            server.createContext("/api/extract-and-validate", new DisabledExtractHandler());
+        }
+        server.createContext("/", new StaticHandler());
+        server.setExecutor(Executors.newFixedThreadPool(8));
+        server.start();
+        return new ValidationServer(server);
     }
 
     public static ValidationServer start(int port, VisionExtractor extractor) throws IOException {
@@ -255,6 +278,20 @@ public final class ValidationServer {
         }
     }
 
+    /**
+     * Stand-in for the legacy cloud extraction endpoint when cloud vision is
+     * disabled (the production default). Returns 503 for any method so the
+     * endpoint is effectively absent while local browser OCR is the flow.
+     */
+    static final class DisabledExtractHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange ex) throws IOException {
+            writeJson(ex, 503,
+                    "{\"error\":\"Cloud vision extraction is disabled. "
+                    + "OCR runs locally in the browser.\",\"status\":\"CLOUD_VISION_DISABLED\"}");
+        }
+    }
+
     static final class StaticHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange ex) throws IOException {
@@ -274,6 +311,10 @@ public final class ValidationServer {
                 }
                 byte[] body = in.readAllBytes();
                 ex.getResponseHeaders().set("Content-Type", contentType(path));
+                if (path.startsWith("/tesseract/")) {
+                    ex.getResponseHeaders().set(
+                            "Cache-Control", "public, max-age=604800, immutable");
+                }
                 ex.sendResponseHeaders(200, body.length);
                 try (OutputStream os = ex.getResponseBody()) {
                     os.write(body);
@@ -328,6 +369,12 @@ public final class ValidationServer {
         }
         if (path.endsWith(".ico")) {
             return "image/x-icon";
+        }
+        if (path.endsWith(".wasm")) {
+            return "application/wasm";
+        }
+        if (path.endsWith(".gz")) {
+            return "application/gzip";
         }
         if (path.endsWith(".woff2")) {
             return "font/woff2";

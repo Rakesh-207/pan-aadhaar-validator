@@ -241,7 +241,7 @@ function setImageFile(file) {
   clearDropError();
   selectedFile = file;
   $("dz-title").textContent = file.name;
-  $("dz-sub").textContent = formatBytes(file.size) + " \u2014 processed transiently, never stored";
+  $("dz-sub").textContent = formatBytes(file.size) + " \u2014 processed locally in your browser, never uploaded";
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = URL.createObjectURL(file);
   const thumb = $("dz-thumb");
@@ -256,17 +256,20 @@ function clearImage() {
   if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
   $("image-file").value = "";
   $("dz-title").textContent = "Drop a PAN / Aadhaar image";
-  $("dz-sub").textContent = "PNG or JPEG, up to 5MB \u2014 processed transiently, never stored";
+  $("dz-sub").textContent = "PNG or JPEG \u2014 OCR runs locally in your browser. The image is not uploaded or stored.";
   $("dz-thumb").classList.add("hidden");
   $("dz-thumb").style.backgroundImage = "";
   $("dropzone").classList.remove("has-file", "drop-error", "drag");
   $("extract").disabled = true;
+  clearOcrCandidates();
+  hideOcrProgress();
+  clearExtraction();
 }
 
 function showDropError(msg) {
   selectedFile = null;
   $("dz-title").textContent = msg;
-  $("dz-sub").textContent = "PNG or JPEG, up to 5MB";
+  $("dz-sub").textContent = "PNG or JPEG \u2014 OCR runs locally, image is not uploaded";
   $("dz-thumb").classList.add("hidden");
   $("dropzone").classList.add("drop-error");
   $("dropzone").classList.remove("has-file");
@@ -277,66 +280,174 @@ function clearDropError() {
   $("dropzone").classList.remove("drop-error");
 }
 
-function renderExtraction(ext) {
-  if (!ext) { clearExtraction(); return; }
-  const block = $("extraction");
-  block.classList.remove("hidden");
-  $("ex-type").textContent = ext.extractedType || "UNKNOWN";
-  $("ex-conf").textContent = (ext.confidence || "").toLowerCase()
-    ? ext.confidence + " confidence" : "";
-  $("ex-value").textContent = ext.value || "\u2014";
-  const warn = $("ex-warn");
-  if (ext.typeMismatch) {
-    warn.textContent = "hint (" + (ext.hintType || "").toLowerCase()
-      + ") differs from detected (" + (ext.extractedType || "").toLowerCase() + ")";
-    warn.classList.remove("hidden");
-  } else {
-    warn.classList.add("hidden");
+/* ---------- Local OCR (Tesseract.js, in-browser) ---------- */
+/* The image never leaves the browser. OCR runs on-device via a self-hosted
+   Tesseract.js worker; only the extracted text candidate is sent to the
+   deterministic Core Java validator at POST /api/validate. */
+let ocrWorker = null;
+let scriptPromise = null;
+const TESS = "/tesseract";
+
+function loadTesseract() {
+  if (window.Tesseract) return Promise.resolve();
+  if (scriptPromise) return scriptPromise;
+  scriptPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = TESS + "/tesseract.min.js";
+    s.async = true;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error("Could not load the local OCR engine."));
+    document.head.appendChild(s);
+  });
+  return scriptPromise;
+}
+
+async function getOcrWorker(onProgress) {
+  if (ocrWorker) return ocrWorker;
+  await loadTesseract();
+  const createWorker = window.Tesseract.createWorker;
+  ocrWorker = await createWorker("eng", 1, {
+    workerPath: TESS + "/worker.min.js",
+    corePath: TESS + "/core",
+    langPath: TESS + "/lang",
+    cacheMethod: "write",
+    logger: (m) => {
+      if (m.status === "recognizing text" && typeof m.progress === "number") {
+        if (onProgress) onProgress(m.progress);
+      }
+    }
+  });
+  return ocrWorker;
+}
+
+/** Pure: pull conservative PAN / Aadhaar candidates out of OCR text. */
+function extractCandidates(text) {
+  const found = new Map();
+  if (!text) return [];
+  const upper = text.toUpperCase();
+  let m;
+  const panRe = /[A-Z]{5}[\s-]?\d{4}[\s-]?[A-Z]/g;
+  while ((m = panRe.exec(upper)) !== null) {
+    const norm = m[0].replace(/[\s-]/g, "");
+    if (!found.has(norm)) found.set(norm, { raw: m[0], normalized: norm, type: "pan" });
   }
+  const aadhaarGrouped = /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g;
+  while ((m = aadhaarGrouped.exec(text)) !== null) {
+    const norm = m[0].replace(/[\s-]/g, "");
+    if (norm.length === 12 && !found.has(norm)) {
+      found.set(norm, { raw: m[0], normalized: norm, type: "aadhaar" });
+    }
+  }
+  const aadhaarFlat = /\b\d{12}\b/g;
+  while ((m = aadhaarFlat.exec(text)) !== null) {
+    if (!found.has(m[0])) found.set(m[0], { raw: m[0], normalized: m[0], type: "aadhaar" });
+  }
+  return Array.from(found.values());
+}
+
+function setOcrProgress(p, status) {
+  $("ocr-progress").classList.remove("hidden");
+  $("ocr-fill").style.width = Math.round(p * 100) + "%";
+  $("ocr-status").textContent = status;
+}
+function hideOcrProgress() {
+  $("ocr-progress").classList.add("hidden");
+}
+
+function clearOcrCandidates() {
+  $("ocr-candidates").classList.add("hidden");
+  $("ocr-cands-list").innerHTML = "";
+  $("ocr-none").classList.add("hidden");
 }
 
 function clearExtraction() {
   $("extraction").classList.add("hidden");
 }
 
-function renderExtractionError(data) {
+function renderExtractionLocal(c) {
+  const block = $("extraction");
+  block.classList.remove("hidden");
+  $("ex-type").textContent = c.type.toUpperCase();
+  $("ex-conf").textContent = "extracted locally via on-device OCR";
+  $("ex-value").textContent = c.normalized;
+  $("ex-warn").classList.add("hidden");
+}
+
+function renderOcrCandidates(cands) {
+  clearOcrCandidates();
+  clearExtraction();
+  $("ocr-candidates").classList.remove("hidden");
+  const list = $("ocr-cands-list");
+  if (!cands.length) {
+    $("ocr-none").classList.remove("hidden");
+    return;
+  }
+  for (const c of cands) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "ochip";
+
+    const tag = document.createElement("span");
+    tag.className = "ochip-type";
+    tag.textContent = c.type.toUpperCase();
+
+    const val = document.createElement("span");
+    val.className = "ochip-val";
+    val.textContent = c.normalized;
+
+    b.append(tag, val);
+    b.addEventListener("click", () => pickCandidate(c));
+    list.appendChild(b);
+  }
+}
+
+function pickCandidate(c) {
+  setType(c.type);
+  $("value").value = c.normalized;
+  syncInputState();
+  renderExtractionLocal(c);
+  validate();
+}
+
+function renderOcrError(msg) {
   $("empty").classList.add("hidden");
   $("result").classList.remove("hidden");
-  const verdict = $("verdict");
-  verdict.className = "verdict bad";
+  const v = $("verdict");
+  v.className = "verdict bad";
   $("v-icon").innerHTML = ICONS.bad;
-  $("v-status").textContent = "Extraction failed";
+  $("v-status").textContent = "OCR failed";
   $("v-reason").classList.add("hidden");
-  $("v-message").textContent = (data && data.error)
-    ? data.error
-    : "Could not extract a document number from the image.";
+  $("v-message").textContent = msg || "Could not read text from the image locally.";
   $("checks").innerHTML = "";
 }
 
-async function extractAndValidate() {
+async function scanAndExtract() {
   if (!selectedFile) return;
   const seq = ++inFlight;
+  clearOcrCandidates();
   clearExtraction();
   renderLoading();
+  setOcrProgress(0, "Loading local OCR engine\u2026");
+  $("extract").disabled = true;
   try {
-    const res = await fetch("/api/extract-and-validate?hint=" + encodeURIComponent(type), {
-      method: "POST",
-      headers: { "Content-Type": selectedFile.type },
-      body: selectedFile
+    const worker = await getOcrWorker((p) => {
+      if (seq === inFlight) setOcrProgress(p, "Reading text from image\u2026");
     });
-    const data = await res.json();
+    const out = await worker.recognize(selectedFile);
     if (seq !== inFlight) return;
-    if (!res.ok) {
-      renderExtractionError(data);
-      return;
-    }
-    render(data);
-    const extracted = data.extraction || {};
-    $("value").value = extracted.value || data.originalValue || "";
-    syncInputState();
-    renderExtraction(extracted);
+    const text = (out && out.data && out.data.text) ? out.data.text : "";
+    const cands = extractCandidates(text);
+    hideOcrProgress();
+    renderOcrCandidates(cands);
+    $("empty").classList.remove("hidden");
+    $("result").classList.add("hidden");
   } catch (e) {
-    if (seq === inFlight) renderError();
+    if (seq === inFlight) {
+      hideOcrProgress();
+      renderOcrError(e && e.message);
+    }
+  } finally {
+    if (seq === inFlight) $("extract").disabled = false;
   }
 }
 
@@ -387,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
       setImageFile(e.dataTransfer.files[0]);
     }
   });
-  $("extract").addEventListener("click", extractAndValidate);
+  $("extract").addEventListener("click", scanAndExtract);
   $("img-clear").addEventListener("click", () => { clearImage(); });
 
   setType("pan");
