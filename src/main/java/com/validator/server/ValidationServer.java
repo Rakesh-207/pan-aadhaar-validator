@@ -4,6 +4,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.validator.core.DocumentValidator;
+import com.validator.json.JsonReader;
 import com.validator.model.DocumentType;
 import com.validator.model.ValidationResult;
 
@@ -42,6 +43,11 @@ public final class ValidationServer {
         server.stop(0);
     }
 
+    /** The actual bound port (useful for ephemeral-port tests). */
+    public int getPort() {
+        return server.getAddress().getPort();
+    }
+
     static final class HealthHandler implements HttpHandler {
         @Override
         public void handle(HttpExchange ex) throws IOException {
@@ -55,25 +61,65 @@ public final class ValidationServer {
     }
 
     static final class ValidateHandler implements HttpHandler {
+        private static final int MAX_BODY = 8192;
+
         @Override
         public void handle(HttpExchange ex) throws IOException {
-            if (!ensureMethod(ex, "GET")) {
-                return;
+            String method = ex.getRequestMethod();
+            if (method.equalsIgnoreCase("GET")) {
+                Map<String, String> q = parseQuery(ex.getRequestURI().getRawQuery());
+                String type = q.getOrDefault("type", "").trim().toLowerCase();
+                String value = q.getOrDefault("value", "");
+                validateAndRespond(ex, type, value);
+            } else if (method.equalsIgnoreCase("POST")) {
+                handlePost(ex);
+            } else {
+                ex.getResponseHeaders().set("Allow", "GET, POST");
+                writeJson(ex, 405, "{\"error\":\"Method not allowed. Use GET or POST.\"}");
             }
-            Map<String, String> q = parseQuery(ex.getRequestURI().getRawQuery());
-            String type = q.getOrDefault("type", "").trim().toLowerCase();
-            String value = q.getOrDefault("value", "");
-            DocumentType dt;
-            try {
-                dt = DocumentType.valueOf(type.toUpperCase());
-            } catch (IllegalArgumentException e) {
-                writeJson(ex, 400,
-                        "{\"error\":\"Invalid or missing 'type'. Use type=pan or type=aadhaar.\"}");
-                return;
-            }
-            ValidationResult result = DocumentValidator.validate(dt, value);
-            writeJson(ex, 200, result.toJson());
         }
+
+        private void handlePost(HttpExchange ex) throws IOException {
+            String ct = ex.getRequestHeaders().getFirst("Content-Type");
+            if (ct == null || !ct.toLowerCase().contains("application/json")) {
+                writeJson(ex, 415,
+                        "{\"error\":\"Unsupported Media Type. POST requires Content-Type: application/json.\"}");
+                return;
+            }
+            byte[] body;
+            try (InputStream in = ex.getRequestBody()) {
+                body = in.readNBytes(MAX_BODY + 1);
+            }
+            if (body.length > MAX_BODY) {
+                writeJson(ex, 400, "{\"error\":\"Request body too large.\"}");
+                return;
+            }
+            String text = new String(body, StandardCharsets.UTF_8);
+            Map<String, String> json;
+            try {
+                json = JsonReader.readObject(text);
+            } catch (IllegalArgumentException e) {
+                writeJson(ex, 400, "{\"error\":\"Malformed JSON body.\"}");
+                return;
+            }
+            String type = json.getOrDefault("type", "").trim().toLowerCase();
+            String value = json.getOrDefault("value", "");
+            validateAndRespond(ex, type, value);
+        }
+    }
+
+    private static void validateAndRespond(HttpExchange ex, String type, String value)
+            throws IOException {
+        DocumentType dt;
+        try {
+            dt = DocumentType.valueOf(type.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            writeJson(ex, 400,
+                    "{\"error\":\"Invalid or missing 'type'. Use type=pan or type=aadhaar.\"}");
+            return;
+        }
+        ValidationResult result = DocumentValidator.validate(dt, value);
+        writeJson(ex, 200, result.toJson());
     }
 
     static final class StaticHandler implements HttpHandler {

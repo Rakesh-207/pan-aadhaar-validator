@@ -1,0 +1,12 @@
+target/
+.git/
+.gitignore
+.codebase-memory/
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Dockerfile
+.dockerignore
+fly.toml
+README.md

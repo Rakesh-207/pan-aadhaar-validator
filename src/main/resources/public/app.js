@@ -85,9 +85,12 @@ function renderRules() {
 
 async function validate() {
   const value = $("value").value;
-  const url = `/api/validate?type=${type}&value=${encodeURIComponent(value)}`;
   try {
-    const res = await fetch(url);
+    const res = await fetch("/api/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, value })
+    });
     const data = await res.json();
     render(data);
   } catch (e) {

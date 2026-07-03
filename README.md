@@ -63,7 +63,28 @@ pan-aadhaar-validator/
 
 ## How to run
 
-Prerequisites: JDK 21 and Maven on the PATH.
+Prerequisites: JDK 21 and Maven.
+
+### Local setup on macOS (Homebrew OpenJDK 21)
+
+On Apple Silicon macOS, Homebrew's `openjdk@21` is **not** linked onto the default `PATH`
+(it is keg-only). Export `JAVA_HOME` and put its `bin` on your `PATH` before running Maven
+or the jar:
+
+```bash
+brew install openjdk@21 maven
+export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+
+# verify
+java -version     # openjdk version "21..."
+javac -version
+mvn -v
+```
+
+> Tip: add the two `export` lines to your `~/.zshrc` so they persist across terminals.
+
+### Build and run
 
 ```bash
 # 1. Run the tests
@@ -100,16 +121,38 @@ curl 'http://localhost:8080/api/health'
 
 ### Validate
 
+The API supports **two methods**. `POST` is preferred — it keeps PAN/Aadhaar values out of
+URLs and server access logs (stronger privacy/KYC hygiene). `GET` is retained for demos and
+backward compatibility.
+
+**`POST /api/validate`** (preferred) — `Content-Type: application/json`:
+
 ```bash
 # PAN (valid government-style example)
-curl 'http://localhost:8080/api/validate?type=pan&value=AFZPK7190K'
+curl -X POST http://localhost:8080/api/validate \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"pan","value":"AFZPK7190K"}'
 
 # Aadhaar (valid-format sample)
-curl 'http://localhost:8080/api/validate?type=aadhaar&value=234567890124'
+curl -X POST http://localhost:8080/api/validate \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"aadhaar","value":"234567890124"}'
 
 # Invalid PAN (4th character 'D' is not a valid category)
-curl 'http://localhost:8080/api/validate?type=pan&value=ABCDE1234F'
+curl -X POST http://localhost:8080/api/validate \
+  -H 'Content-Type: application/json' \
+  -d '{"type":"pan","value":"ABCDE1234F"}'
 ```
+
+**`GET /api/validate?type=pan|aadhaar&value=...`** (demo / backward compat):
+
+```bash
+curl 'http://localhost:8080/api/validate?type=pan&value=AFZPK7190K'
+curl 'http://localhost:8080/api/validate?type=aadhaar&value=234567890124'
+```
+
+Error responses: invalid `type` → `400`; non-JSON `Content-Type` on POST → `415`; body too
+large (>8 KB) → `400`; any other method → `405` (`Allow: GET, POST`).
 
 Response shape:
 
@@ -132,6 +175,43 @@ Response shape:
   ]
 }
 ```
+
+---
+
+## Deployment (Docker / Fly.io)
+
+> Once the app is containerized, **deployment does not depend on your local `JAVA_HOME` /
+> `PATH`**. The JDK/JRE is provided by the Docker image; you do not need Java installed locally
+> to build or run the image on Fly (Fly builds remotely with `fly deploy --remote-only`).
+
+### Docker image
+
+The repo ships a multi-stage `Dockerfile` (Maven+JDK 21 build stage, JRE 21 runtime stage,
+non-root user, container-aware JVM flags). The app reads `PORT` (default `8080`) and binds
+`0.0.0.0`, which is what Fly's proxy expects.
+
+```bash
+# Build (needs a local Docker daemon)
+docker build -t pan-aadhaar-validator .
+
+# Run on http://localhost:8080
+docker run --rm -p 8080:8080 -e PORT=8080 pan-aadhaar-validator
+```
+
+### Fly.io
+
+```bash
+fly auth login
+fly apps create pan-aadhaar-validator        # if the name is taken, append a suffix
+fly deploy                                    # builds + deploys (remote builder if no local Docker)
+fly apps open                                 # opens https://pan-aadhaar-validator.fly.dev
+curl https://pan-aadhaar-validator.fly.dev/api/health
+```
+
+`fly.toml` is preconfigured: `internal_port = 8080`, `force_https = true`,
+`auto_stop_machines = true`, `auto_start_machines = true`, `min_machines_running = 0`, with a
+health check on `/api/health`. Region defaults to `bom` (Mumbai); change `primary_region` to
+suit your audience.
 
 ---
 
