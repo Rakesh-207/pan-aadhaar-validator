@@ -2,72 +2,148 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="light" />
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="description" content="Validate the format and checksum of Indian PAN and Aadhaar numbers. Deterministic, client-server validation powered by Core Java. Nothing is stored." />
   <title>PAN / Aadhaar Format Validator</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
   <header class="topbar">
-    <div class="brand">
-      <div class="logo">KYC</div>
-      <div>
-        <h1>PAN / Aadhaar Format Validator</h1>
-        <p class="tag">Deterministic format &amp; checksum validation &mdash; powered by Core Java</p>
+    <div class="topbar-inner">
+      <a class="brand" href="/" aria-label="PAN / Aadhaar Validator — home">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="currentColor"></rect>
+            <path d="M7.4 12.2l3 3 6.2-6.6" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">PAN / Aadhaar Validator</span>
+          <span class="brand-tag">Deterministic format &amp; checksum validation &mdash; Core Java</span>
+        </span>
+      </a>
+      <div class="topbar-meta">
+        <span class="trust">
+          <span class="trust-dot" aria-hidden="true"></span>
+          Format-only check &middot; Nothing stored
+        </span>
       </div>
     </div>
   </header>
 
-  <main class="container">
-    <div class="card">
-      <div class="segmented" role="tablist" aria-label="Document type">
-        <button class="seg active" role="tab" aria-selected="true" data-type="pan">PAN</button>
-        <button class="seg" role="tab" aria-selected="false" data-type="aadhaar">Aadhaar</button>
-      </div>
+  <main class="shell">
+    <section class="console" aria-label="Validator workspace">
 
-      <form id="form" autocomplete="off" onsubmit="return false">
-        <label class="field">
-          <span id="label-value">Enter PAN</span>
-          <input id="value" type="text" inputmode="text" placeholder="e.g. AFZPK7190K" spellcheck="false" />
-        </label>
-
-        <div class="actions">
-          <button id="validate" class="primary" type="button">Validate</button>
-          <button id="clear" class="ghost" type="button">Clear</button>
+      <div class="pane pane--primary">
+        <div class="pane-head">
+          <h1 class="pane-title">Validate a document</h1>
+          <p class="pane-sub">Pick a type, paste the number, and get an instant structural verdict.</p>
         </div>
-      </form>
 
-      <div id="preview" class="preview hidden">
-        <span class="preview-label">Normalized value</span>
-        <code id="normalized"></code>
-      </div>
+        <div class="segmented" role="tablist" aria-label="Document type">
+          <button class="seg active" role="tab" id="seg-pan" aria-selected="true" data-type="pan">PAN</button>
+          <button class="seg" role="tab" id="seg-aadhaar" aria-selected="false" data-type="aadhaar">Aadhaar</button>
+        </div>
 
-      <div id="result" class="result hidden">
-        <div class="verdict">
-          <span id="badge" class="badge"></span>
-          <div>
-            <div id="message" class="message"></div>
-            <div id="reason" class="reason"></div>
+        <form id="form" autocomplete="off" onsubmit="return false">
+          <label class="field" for="value">
+            <span class="field-label">
+              <span id="label-value">Enter PAN</span>
+              <span class="field-hint" id="hint">10 characters</span>
+            </span>
+            <span class="input-wrap">
+              <input id="value" name="value" type="text" inputmode="text"
+                     placeholder="e.g. AFZPK7190K" spellcheck="false"
+                     autocapitalize="characters" autocomplete="off" />
+              <button id="input-clear" class="input-clear" type="button" aria-label="Clear input" tabindex="-1" aria-hidden="true">
+                <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+              </button>
+            </span>
+            <span class="field-foot">
+              <span class="lock" aria-hidden="true">
+                <svg viewBox="0 0 16 16" width="12" height="12"><path d="M4 7V5a4 4 0 0 1 8 0v2" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linecap="round"/><rect x="3" y="7" width="10" height="7" rx="1.6" stroke="currentColor" stroke-width="1.3" fill="none"/></svg>
+              </span>
+              Processed in-memory &mdash; never stored, logged, or persisted.
+            </span>
+          </label>
+
+          <div class="actions">
+            <button id="validate" class="btn primary" type="button">Validate</button>
+            <button id="clear" class="btn tertiary" type="button">Clear</button>
+          </div>
+        </form>
+
+        <div id="preview" class="preview hidden">
+          <span class="preview-label">Normalized value</span>
+          <code id="normalized"></code>
+        </div>
+
+        <div class="outcome" id="outcome" aria-live="polite" aria-atomic="false">
+          <div class="empty" id="empty">
+            <span class="empty-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+                <rect x="4" y="3.4" width="12.5" height="17.2" rx="2.2" stroke="currentColor" stroke-width="1.4"></rect>
+                <path d="M7.6 8h5.6M7.6 11h5.6M7.6 14h3.2" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+                <circle cx="16.6" cy="16.4" r="3.3" fill="#fff" stroke="currentColor" stroke-width="1.4"></circle>
+                <path d="M19 18.7l2.3 2.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"></path>
+              </svg>
+            </span>
+            <p class="empty-title">Awaiting input</p>
+            <p class="empty-sub">Type a PAN or Aadhaar &mdash; the verdict appears here.</p>
+          </div>
+
+          <div class="result hidden" id="result">
+            <div class="verdict" id="verdict">
+              <span class="verdict-icon" id="v-icon" aria-hidden="true"></span>
+              <div class="verdict-main">
+                <div class="verdict-row">
+                  <span class="verdict-status" id="v-status"></span>
+                  <span class="verdict-reason hidden" id="v-reason"></span>
+                </div>
+                <p class="verdict-msg" id="v-message"></p>
+              </div>
+            </div>
+            <ul id="checks" class="checks"></ul>
           </div>
         </div>
-        <ul id="checks" class="checks"></ul>
+
+        <section class="examples">
+          <div class="examples-head">
+            <h2 id="examples-title">PAN examples</h2>
+            <span class="examples-hint">Tap to try</span>
+          </div>
+          <div id="examples" class="chips"></div>
+        </section>
       </div>
 
-      <section class="examples">
-        <h2 id="examples-title">PAN examples</h2>
-        <div id="examples" class="chips"></div>
-      </section>
-    </div>
+      <div class="pane-divider" aria-hidden="true"></div>
 
-    <aside class="card subtle">
-      <h2>What is checked?</h2>
-      <div id="rules" class="rules"></div>
-    </aside>
+      <aside class="pane pane--side" aria-label="Validation rules">
+        <div class="pane-head">
+          <h2 class="pane-title">What is checked</h2>
+          <p class="pane-sub">Structural rules and checksums — no issuance lookup.</p>
+        </div>
+        <ol id="rules" class="rules"></ol>
+      </aside>
 
-    <p class="disclaimer">
-      <strong>Disclaimer:</strong> Format validation is <em>not</em> identity verification.
-      This tool does not store, log, or persist entered numbers, and it cannot confirm whether
-      a number was actually issued by the Income Tax Department or UIDAI.
-    </p>
+    </section>
+
+    <footer class="disclaimer">
+      <span class="disc-icon" aria-hidden="true">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none"><circle cx="10" cy="10" r="8.2" stroke="currentColor" stroke-width="1.4"/><path d="M10 9.2v4.3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="10" cy="6.4" r="1" fill="currentColor"/></svg>
+      </span>
+      <p>
+        <strong>Format validation is not identity verification.</strong>
+        This tool only checks structure and (for Aadhaar) the Verhoeff checksum. It cannot confirm
+        whether a number was actually issued by the Income Tax Department or UIDAI. Entered numbers
+        are never stored, logged, or persisted.
+      </p>
+    </footer>
   </main>
 
   <script src="/app.js"></script>

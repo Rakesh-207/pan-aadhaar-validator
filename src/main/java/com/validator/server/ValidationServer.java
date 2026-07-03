@@ -196,6 +196,9 @@ public final class ValidationServer {
         if (path.endsWith(".ico")) {
             return "image/x-icon";
         }
+        if (path.endsWith(".woff2")) {
+            return "font/woff2";
+        }
         return "application/octet-stream";
     }
 
