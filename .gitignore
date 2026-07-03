@@ -8,3 +8,6 @@ target/
 
 # Codebase-memory MCP index (tooling metadata, not project content)
 .codebase-memory/
+
+# Playwright-cli session artifacts (screenshots/snapshots)
+.playwright-cli/
