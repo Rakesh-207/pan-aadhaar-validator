@@ -10,7 +10,18 @@ public final class Main {
 
     public static void main(String[] args) throws IOException {
         int port = resolvePort(args);
-        ValidationServer server = ValidationServer.start(port);
+        ValidationServer server;
+        try {
+            server = ValidationServer.start(port);
+        } catch (IllegalStateException e) {
+            // Missing/invalid auth configuration — fail fast with a clear message.
+            System.err.println("FATAL: could not start server — auth configuration is invalid.");
+            System.err.println("  " + e.getMessage());
+            System.err.println("  Set GOOGLE_CLIENT_ID + SESSION_SECRET, "
+                    + "or DEV_BYPASS_AUTH=true (and COOKIE_SECURE=false) for local dev.");
+            System.exit(1);
+            return;
+        }
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             System.out.println("\nShutting down...");
             server.stop();
