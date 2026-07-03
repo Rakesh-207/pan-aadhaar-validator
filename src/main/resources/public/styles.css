@@ -18,38 +18,38 @@
   --sans: "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-  --bg: #f4f6fa;
+  --bg: #f6f4ef;
   --bg-grad:
-    radial-gradient(1200px 560px at 82% -10%, #e9f1fb 0%, rgba(233, 241, 251, 0) 55%),
-    radial-gradient(900px 520px at -5% -5%, #eaeef6 0%, rgba(234, 238, 246, 0) 52%);
+    radial-gradient(1200px 560px at 82% -10%, #f3eee4 0%, rgba(243, 238, 228, 0) 55%),
+    radial-gradient(900px 520px at -5% -5%, #f1ece2 0%, rgba(241, 236, 226, 0) 52%);
 
-  --surface: #ffffff;
-  --surface-2: #f8fafc;
-  --surface-3: #f1f4f9;
+  --surface: #fffefb;
+  --surface-2: #f4f1ea;
+  --surface-3: #efeade;
 
-  --ink: #0c1526;
-  --ink-2: #3a4759;
-  --muted: #697587;
-  --faint: #97a1b1;
+  --ink: #1f1d18;
+  --ink-2: #46413a;
+  --muted: #7a7268;
+  --faint: #a69d91;
 
-  --line: #e8ebf1;
-  --line-2: #dfe4ec;
-  --line-strong: #d2d8e3;
+  --line: #ebe6dc;
+  --line-2: #e1dad0;
+  --line-strong: #d4cab9;
 
-  --accent: #0b2f5a;
-  --accent-2: #14507f;
-  --accent-soft: #eaf1fb;
-  --accent-line: #cfe0f6;
+  --accent: #c15f3c;
+  --accent-2: #a84e2e;
+  --accent-soft: #f4ece6;
+  --accent-line: #e6d4c6;
 
-  --ok: #0f7a3d;
-  --ok-bg: #eaf6ee;
-  --ok-line: #c0e3cd;
-  --bad: #b42318;
-  --bad-bg: #fcebe9;
-  --bad-line: #f1c9c4;
-  --skip: #97a1b1;
+  --ok: #2f7a4f;
+  --ok-bg: #eef4ef;
+  --ok-line: #c6ddd0;
+  --bad: #bd4a37;
+  --bad-bg: #faece8;
+  --bad-line: #efd3cb;
+  --skip: #a69d91;
 
-  --ring: rgba(20, 80, 127, 0.16);
+  --ring: rgba(193, 95, 60, 0.18);
 
   --r-xs: 6px; --r-sm: 9px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px; --r-pill: 999px;
 
@@ -273,7 +273,7 @@ input#value:focus { border-color: var(--accent-2); box-shadow: 0 0 0 4px var(--r
 /* Skeleton shimmer */
 .skel-bar {
   display: block; border-radius: var(--r-xs);
-  background: linear-gradient(90deg, #eef1f6 0%, #f6f8fb 50%, #eef1f6 100%);
+  background: linear-gradient(90deg, #efeae0 0%, #f6f2ea 50%, #efeae0 100%);
   background-size: 200% 100%; animation: shimmer 1.3s linear infinite;
 }
 @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }

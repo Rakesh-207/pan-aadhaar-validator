@@ -266,6 +266,14 @@ function clearImage() {
   clearExtraction();
 }
 
+/** Any clear/remove action resets both the text side and the image/OCR side. */
+function resetAll() {
+  $("value").value = "";
+  syncInputState();
+  clearImage();
+  renderEmpty();
+}
+
 function showDropError(msg) {
   selectedFile = null;
   $("dz-title").textContent = msg;
@@ -481,9 +489,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   $("validate").addEventListener("click", validate);
   $("clear").addEventListener("click", () => {
-    input.value = "";
-    syncInputState();
-    renderEmpty();
+    resetAll();
     input.focus();
   });
 
@@ -499,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
   $("extract").addEventListener("click", scanAndExtract);
-  $("img-clear").addEventListener("click", () => { clearImage(); });
+  $("img-clear").addEventListener("click", () => { resetAll(); });
 
   setType("pan");
 });
