@@ -170,7 +170,7 @@ html[data-theme="dark"] .shell-inner { box-shadow: inset 0 1px 0 rgba(255, 255, 
 
 /* Typography Scale */
 h1, h2, h3, h4 { margin: 0; font-weight: 600; letter-spacing: -0.02em; }
-.hero-title { font-size: clamp(2.8rem, 5.5vw, 4.2rem); line-height: 1.05; letter-spacing: -0.04em; font-weight: 700; color: var(--ink); }
+.hero-title { font-size: clamp(2.4rem, 4.6vw, 3.4rem); line-height: 1.06; letter-spacing: -0.04em; font-weight: 700; color: var(--ink); }
 .hero-title span.accent { color: var(--accent); }
 .hero-sub { margin: 24px 0 0; font-size: 18.5px; line-height: 1.6; color: var(--ink-2); max-width: 48ch; }
 .sec-title { margin: 0 0 48px; font-size: clamp(2rem, 4vw, 2.8rem); font-weight: 700; letter-spacing: -0.03em; color: var(--ink); text-align: center; }
@@ -262,12 +262,14 @@ html[data-theme="dark"] .btn.primary { background: var(--ink); color: var(--bg);
 .btn-guest:hover .circle-arrow { background: var(--ink); color: var(--bg); transform: translate(2px, -1px) rotate(45deg); }
 
 /* Landing Wrapper */
-.landing-wrap { max-width: var(--shell-max); margin: 0 auto; padding: 0 32px 128px; }
+.landing-wrap { max-width: var(--shell-max); margin: 0 auto; padding: 24px 32px 128px; }
 
-/* Asymmetrical Split Hero */
+/* Asymmetrical Split Hero — natural/content-height (no forced full-viewport
+   min-height) so the H1 is fully visible at 1280x800/720 and mobile without
+   being pushed too high under the sticky topbar. */
 .hero-split {
   display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 80px; align-items: center;
-  min-height: calc(100dvh - 120px); padding-top: 40px; padding-bottom: 80px;
+  padding: 64px 0 96px;
 }
 .hero-visual { position: relative; perspective: 1200px; }
 .z-cascade-card {
@@ -506,8 +508,31 @@ input#value:focus { border-color: var(--accent); background: var(--surface); box
   overflow: visible;
   min-width: 0;
   min-height: 0;
+  /* GIS renders its button inside a cross-origin iframe whose canvas is
+     always white. Declaring the mount as light-scheme stops the iframe
+     from painting a dark-mode white slab (the Google pill is a light
+     button in every theme). Scoped to the mount, so page dark mode
+     (driven by [data-theme]) is unaffected. */
+  color-scheme: light;
 }
-.g-signin-slot iframe { display: block; }
+/* GIS injects a wrapper div sized to the official button, then renders an
+   iframe inside it that intentionally overflows the wrapper (~10px each
+   side, ~2px top/bottom) with a white canvas — that overflow is the square
+   "brick" visible behind the pill. Clipping the wrapper to its own bounds
+   (which auto-track the button size, so no hard-coded pixels) hides the
+   iframe's white overflow; the matching pill radius keeps the official
+   rounded shape. The iframe is also clipped directly as a fallback. */
+.g-signin-slot > div {
+  border-radius: 999px;
+  overflow: hidden;
+}
+.g-signin-slot iframe {
+  display: block;
+  border-radius: 999px;
+  clip-path: inset(0 round 999px);
+  overflow: hidden;
+  background: transparent;
+}
 
 /* Auth Meta & Footer */
 .user-chip { display: flex; align-items: center; gap: 16px; }
