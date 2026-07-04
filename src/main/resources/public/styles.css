@@ -550,6 +550,85 @@ input#value:focus { border-color: var(--accent); background: var(--surface); box
 .foot-copy { font-size: 13.5px; color: var(--muted); }
 .foot-tech { display: flex; gap: 20px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
 
+/* ---------- Privacy Reassurance Marquee ----------
+   A slim, calm, on-brand strip. Not an alert: it reuses the surface palette,
+   hairline border and soft shadow so it reads as part of the chrome. Two
+   identical sets scroll left as one track; translateX(-50%) loops seamlessly
+   because each set carries its own trailing spacer equal to the inter-item
+   gap. Only `transform` animates (GPU-safe). */
+.privacy-strip {
+  max-width: var(--shell-max);
+  margin: 0 auto;
+  width: 100%;
+}
+.privacy-sr {
+  position: absolute !important;
+  width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); clip-path: inset(50%);
+  white-space: nowrap; border: 0;
+}
+.privacy-marquee {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  color: var(--ink-2);
+}
+html[data-theme="dark"] .privacy-marquee { box-shadow: var(--shadow-xs), inset 0 1px 0 rgba(255, 255, 255, 0.03); }
+.privacy-track {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: max-content;
+  animation: privacy-scroll 56s linear infinite;
+  will-change: transform;
+}
+.privacy-marquee:hover .privacy-track,
+.privacy-marquee:focus-within .privacy-track { animation-play-state: paused; }
+.privacy-set {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 30px 0 0; /* trailing spacer == inter-item gap => seamless loop */
+  list-style: none;
+}
+.privacy-set li {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-right: 30px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.privacy-set li:last-child { margin-right: 0; }
+.privacy-set svg { width: 14px; height: 14px; color: var(--accent); flex: none; }
+.privacy-set .pdot { width: 4px; height: 4px; border-radius: 50%; background: var(--faint); margin-left: 9px; opacity: 0.7; flex: none; }
+.privacy-set li:last-child .pdot { display: none; }
+@keyframes privacy-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+/* Reduced motion: freeze the track, show one centered set, allow wrap on
+   narrow screens so nothing is clipped. */
+@media (prefers-reduced-motion: reduce) {
+  .privacy-track { animation: none; width: 100%; flex-wrap: wrap; justify-content: center; }
+  .privacy-set { padding-right: 0; flex-wrap: wrap; justify-content: center; gap: 14px 22px; }
+  .privacy-set + .privacy-set { display: none; }
+  .privacy-set li { margin-right: 0; }
+  .privacy-set .pdot { display: none; }
+  .privacy-marquee { min-height: auto; padding: 10px 18px; }
+}
+
 /* Responsive Overrides */
 @media (max-width: 1024px) {
   .console { grid-template-columns: 1fr; }
@@ -572,4 +651,6 @@ input#value:focus { border-color: var(--accent); background: var(--surface); box
   .check { grid-template-columns: 20px 1fr; gap: 12px; row-gap: 4px; }
   .c-detail { grid-column: 2; text-align: left; }
   .dropzone { flex-direction: column; text-align: center; }
+  .privacy-set li { font-size: 12.5px; }
+  .privacy-track { animation-duration: 42s; }
 }

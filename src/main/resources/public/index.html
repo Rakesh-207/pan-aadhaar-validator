@@ -7,7 +7,7 @@
   <meta name="theme-color" content="#faf9f6" id="theme-color" />
   <meta name="description" content="Secure, deterministic format and Verhoeff checksum validator for Indian PAN and Aadhaar numbers. Zero-trust architecture with local OCR scan functionality." />
   <title>Secure PAN / Aadhaar Format Validator</title>
-  <link rel="stylesheet" href="/styles.css?v=20260705" />
+  <link rel="stylesheet" href="/styles.css?v=20260706" />
   <script>
     // Inline script to prevent theme flash
     (function () {
@@ -23,6 +23,13 @@
 <body>
   <div class="grain" aria-hidden="true"></div>
   <div class="ambient" aria-hidden="true"></div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="ic-privacy" viewBox="0 0 24 24">
+      <rect x="4" y="10.5" width="16" height="10.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
+  </svg>
 
   <header class="topbar reveal delay-100">
     <div class="topbar-inner">
@@ -40,6 +47,29 @@
   </header>
 
   <main class="landing-wrap">
+    <!-- Privacy reassurance marquee -->
+    <div class="privacy-strip" role="region" aria-label="How your information is handled">
+      <p class="privacy-sr">How your information is handled: your information stays private. Images are never stored. Numbers you enter are never saved. Nothing is kept after you leave. You stay in control of your data.</p>
+      <div class="privacy-marquee" aria-hidden="true">
+        <div class="privacy-track">
+          <ul class="privacy-set">
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Your information stays private</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Images are never stored</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Numbers you enter are never saved</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Nothing is kept after you leave</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>You stay in control of your data</span><span class="pdot"></span></li>
+          </ul>
+          <ul class="privacy-set">
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Your information stays private</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Images are never stored</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Numbers you enter are never saved</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>Nothing is kept after you leave</span><span class="pdot"></span></li>
+            <li><svg aria-hidden="true"><use href="#ic-privacy"/></svg><span>You stay in control of your data</span><span class="pdot"></span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
     <!-- Asymmetric Split Hero -->
     <section class="hero-split reveal delay-200" aria-label="Introduction">
       <div class="hero-copy">
@@ -156,7 +186,7 @@
     </div>
   </footer>
 
-  <script src="/landing.js?v=20260705"></script>
+  <script src="/landing.js?v=20260706"></script>
   <script>
     // Scroll reveal logic
     document.addEventListener("DOMContentLoaded", () => {
