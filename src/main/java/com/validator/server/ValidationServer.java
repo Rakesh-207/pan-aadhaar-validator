@@ -478,15 +478,19 @@ public final class ValidationServer {
         }
 
         private void devLogin(HttpExchange ex) throws IOException {
+            // The guest/dev login mints a real signed session without a Google
+            // ID token, so it must only ever be reachable when DEV_BYPASS_AUTH
+            // is active. In every other (production) deployment it is refused
+            // as a 404 so it is not even discoverable.
             if (!cfg.devBypass()) {
-                writeJson(ex, 404, "{\"error\":\"Not found\"}");
+                writeJson(ex, 404, "{\"error\":\"Not found.\"}");
                 return;
             }
             if (!sameOrigin(ex)) {
                 writeJson(ex, 403, "{\"error\":\"Forbidden: cross-origin request.\"}");
                 return;
             }
-            issueSession(ex, new VerifiedUser("dev-local", "dev@localhost", "Local Dev", "", true));
+            issueSession(ex, new VerifiedUser("guest-local", "guest@localhost", "Guest User", "", true));
             writeJson(ex, 200, "{\"ok\":true}");
         }
 

@@ -168,8 +168,33 @@ class AuthRoutesTest {
 
     @Test
     void devLoginRefusedWhenNotInBypass() throws Exception {
+        // Production shape: DEV_BYPASS_AUTH is off, so the guest/dev login
+        // endpoint must be unreachable (404), never mint a session.
         HttpResponse<String> res = postJson("/api/auth/dev-login", "", null, origin());
         assertEquals(404, res.statusCode());
+        assertFalse(res.headers().firstValue("Set-Cookie").isPresent(),
+                "no session cookie must be issued when dev-bypass is off");
+    }
+
+    @Test
+    void devLoginAllowedInBypassMode() throws Exception {
+        // Local-only shape: DEV_BYPASS_AUTH=true. A fresh server is booted in
+        // bypass mode; the guest login must succeed and mint a session cookie.
+        AuthConfig bypass = new AuthConfig(SECRET, 28800L, null, false, true);
+        ValidationServer bypassServer = ValidationServer.start(0,
+                new StubExtractor(new Extraction("PAN", "AFZPK7190K", "HIGH")), bypass, null);
+        try {
+            String b = "http://localhost:" + bypassServer.getPort();
+            HttpRequest post = HttpRequest.newBuilder().uri(URI.create(b + "/api/auth/dev-login"))
+                    .header("Content-Type", "application/json")
+                    .header("Origin", b)
+                    .POST(HttpRequest.BodyPublishers.ofString("")).build();
+            HttpResponse<String> res = client.send(post, HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, res.statusCode());
+            assertTrue(res.headers().firstValue("Set-Cookie").orElse("").startsWith("session="));
+        } finally {
+            bypassServer.stop();
+        }
     }
 
     @Test

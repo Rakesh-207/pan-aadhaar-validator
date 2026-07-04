@@ -139,7 +139,7 @@ function render(data) {
   $("empty").classList.add("hidden");
   $("result").classList.remove("hidden");
   $("preview").classList.remove("hidden");
-  $("normalized").textContent = data.normalizedValue || "\u2014";
+  $("normalized").textContent = data.normalizedValue || "-";
 
   const valid = !!data.valid;
   const verdict = $("verdict");
@@ -242,7 +242,7 @@ function setImageFile(file) {
   clearDropError();
   selectedFile = file;
   $("dz-title").textContent = file.name;
-  $("dz-sub").textContent = formatBytes(file.size) + " \u2014 processed locally in your browser, never uploaded";
+  $("dz-sub").textContent = formatBytes(file.size) + " - processed locally in your browser, never uploaded";
   if (objectUrl) URL.revokeObjectURL(objectUrl);
   objectUrl = URL.createObjectURL(file);
   const thumb = $("dz-thumb");
@@ -257,7 +257,7 @@ function clearImage() {
   if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
   $("image-file").value = "";
   $("dz-title").textContent = "Drop a PAN / Aadhaar image";
-  $("dz-sub").textContent = "PNG or JPEG \u2014 OCR runs locally in your browser. The image is not uploaded or stored.";
+  $("dz-sub").textContent = "PNG or JPEG - OCR runs locally in your browser. The image is not uploaded or stored.";
   $("dz-thumb").classList.add("hidden");
   $("dz-thumb").style.backgroundImage = "";
   $("dropzone").classList.remove("has-file", "drop-error", "drag");
@@ -278,7 +278,7 @@ function resetAll() {
 function showDropError(msg) {
   selectedFile = null;
   $("dz-title").textContent = msg;
-  $("dz-sub").textContent = "PNG or JPEG \u2014 OCR runs locally, image is not uploaded";
+  $("dz-sub").textContent = "PNG or JPEG - OCR runs locally, image is not uploaded";
   $("dz-thumb").classList.add("hidden");
   $("dropzone").classList.add("drop-error");
   $("dropzone").classList.remove("has-file");
