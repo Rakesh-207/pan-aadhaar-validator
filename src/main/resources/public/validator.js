@@ -209,6 +209,7 @@ async function validate() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ type, value })
     });
+    if (res.status === 401) { window.location = "/"; return; }
     const data = await res.json();
     if (seq === inFlight) render(data);
   } catch (e) {

@@ -5,14 +5,171 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="color-scheme" content="light" />
   <meta name="theme-color" content="#f6f4ef" />
+  <meta name="description" content="Validate the format and checksum of Indian PAN and Aadhaar numbers. Deterministic Core Java validation, on-device OCR, no database, nothing stored." />
   <title>PAN / Aadhaar Format Validator</title>
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <main class="shell">
-    <h1>PAN / Aadhaar Format Validator</h1>
-    <p>Landing placeholder — replaced in the next step.</p>
-    <p><a href="/app">Go to app</a></p>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/" aria-label="PAN / Aadhaar Validator — home">
+        <span class="mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <rect x="2.5" y="2.5" width="19" height="19" rx="6" fill="currentColor"></rect>
+            <path d="M7.4 12.2l3 3 6.2-6.6" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" fill="none"></path>
+          </svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">PAN / Aadhaar Validator</span>
+          <span class="brand-tag">Deterministic format &amp; checksum validation &mdash; Core Java</span>
+        </span>
+      </a>
+      <div class="topbar-meta">
+        <span class="trust">
+          <span class="trust-dot" aria-hidden="true"></span>
+          Format-only check &middot; Nothing stored
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="landing">
+
+    <!-- ============== HERO (split: copy left, product preview right) ============== -->
+    <section class="hero" aria-label="Introduction">
+      <div class="hero-copy">
+        <p class="eyebrow">Deterministic format validation</p>
+        <h1 class="hero-title">Validate PAN and Aadhaar<br /> formats, honestly.</h1>
+        <p class="hero-sub">
+          Deterministic format and checksum checks in Core Java. Scan images with
+          on-device OCR. No database, nothing stored.
+        </p>
+
+        <div class="hero-cta" id="cta-area">
+          <!-- Google Identity Services renders the Sign in with Google button here -->
+          <div id="g-signin" class="g-signin-slot" aria-live="polite"></div>
+          <button id="dev-continue" class="btn primary gsig-btn" type="button" hidden>
+            Continue locally
+          </button>
+          <a class="cta-secondary" href="#how">See how it works</a>
+        </div>
+        <p class="hero-foot" id="cta-note" hidden></p>
+      </div>
+
+      <!-- Real, non-interactive product preview built from the live design tokens -->
+      <aside class="preview" aria-label="Product preview">
+        <div class="preview-card">
+          <div class="preview-bar">
+            <span class="preview-dot" aria-hidden="true"></span>
+            <span class="preview-dot" aria-hidden="true"></span>
+            <span class="preview-dot" aria-hidden="true"></span>
+            <span class="preview-url">pan-aadhaar-validator &middot; /app</span>
+          </div>
+          <div class="preview-body">
+            <div class="pv-seg" role="presentation">
+              <span class="pv-seg pv-seg-on">PAN</span>
+              <span class="pv-seg">Aadhaar</span>
+            </div>
+            <div class="pv-field">
+              <span class="pv-label">Enter PAN</span>
+              <code class="pv-value">AFZPK7190K</code>
+            </div>
+            <div class="pv-verdict pv-ok">
+              <span class="pv-vicon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M8 12.4l2.6 2.6 5.5-5.9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+              <div>
+                <div class="pv-vstatus">Valid format</div>
+                <div class="pv-vmsg">4th char &lsquo;P&rsquo; = Individual. Format only, not identity.</div>
+              </div>
+            </div>
+            <div class="pv-row"><span class="pv-lock" aria-hidden="true"></span>Processed in memory &mdash; never stored.</div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <!-- ============== HOW IT WORKS (numbered steps, distinct layout family) ============== -->
+    <section class="how" id="how" aria-labelledby="how-title">
+      <h2 class="sec-title" id="how-title">How it works</h2>
+      <ol class="steps">
+        <li>
+          <span class="step-no">01</span>
+          <h3>Sign in with Google</h3>
+          <p>Google issues an ID token. Core Java verifies the signature, audience, and expiry &mdash; then mints a signed session cookie.</p>
+        </li>
+        <li>
+          <span class="step-no">02</span>
+          <h3>Paste or scan</h3>
+          <p>Type a number, or scan an image. OCR runs locally in your browser via Tesseract.js; the image is never uploaded.</p>
+        </li>
+        <li>
+          <span class="step-no">03</span>
+          <h3>Get a deterministic verdict</h3>
+          <p>Only the text candidate is sent to the Core Java validator for structure and the Aadhaar Verhoeff checksum.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- ============== FEATURE BENTO (varied cells, not 3 equal cards) ============== -->
+    <section class="features" aria-labelledby="feat-title">
+      <h2 class="sec-title" id="feat-title">What it checks &mdash; and what it doesn&rsquo;t</h2>
+      <div class="bento">
+        <article class="cell cell--accent">
+          <span class="cell-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M5 12.5l3.2 3.2 7.8-8.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="3.5" y="4" width="17" height="16" rx="3" stroke="currentColor" stroke-width="1.6"/></svg>
+          </span>
+          <h3>Format &amp; checksum</h3>
+          <p>PAN structure (10 chars, holder category) and the Aadhaar 12-digit Verhoeff checksum, validated deterministically in Core Java.</p>
+        </article>
+        <article class="cell">
+          <span class="cell-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 9h17" stroke="currentColor" stroke-width="1.6"/><circle cx="7" cy="7.3" r="0.9" fill="currentColor"/></svg>
+          </span>
+          <h3>On-device OCR</h3>
+          <p>Scan a PAN or Aadhaar image. Tesseract.js runs in your browser; the image is processed locally and never uploaded.</p>
+        </article>
+        <article class="cell">
+          <span class="cell-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M4 7V5a3 3 0 0 1 3-3" stroke="currentColor" stroke-width="1.7" fill="none"/><rect x="3.5" y="7" width="7" height="11" rx="1.6" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M8 18v2.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+          </span>
+          <h3>No database</h3>
+          <p>No accounts table, no validation history, no document store. The session cookie carries only minimal signed claims.</p>
+        </article>
+        <article class="cell cell--mono">
+          <span class="cell-ico" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>
+          </span>
+          <h3>Core Java core</h3>
+          <p>A self-contained <span class="mono">com.sun.net.httpserver</span> server. No framework, no external state, deterministic output for the same input.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============== HONEST PITCH BAND ============== -->
+    <section class="pitch" aria-label="Important limitation">
+      <div class="pitch-card">
+        <span class="pitch-ico" aria-hidden="true">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none"><circle cx="10" cy="10" r="8.2" stroke="currentColor" stroke-width="1.5"/><path d="M10 9.2v4.3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="10" cy="6.4" r="1" fill="currentColor"/></svg>
+        </span>
+        <p>
+          <strong>Format validation is not identity verification.</strong>
+          This tool only checks structure and the Aadhaar Verhoeff checksum. It cannot
+          confirm whether a number was actually issued by the Income Tax Department or
+          UIDAI. Entered numbers and images are never stored, logged, or persisted.
+        </p>
+      </div>
+    </section>
+
+    <footer class="landing-foot">
+      <span>Google signs you in &middot; Core Java verifies the login &middot; signed stateless session protects the validator.</span>
+      <span class="foot-tech">Tesseract.js &middot; IBM Plex &middot; JDK 21</span>
+    </footer>
   </main>
+
+  <script src="/landing.js"></script>
 </body>
 </html>

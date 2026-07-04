@@ -32,9 +32,19 @@
           <span class="trust-dot" aria-hidden="true"></span>
           Format-only check &middot; Nothing stored
         </span>
+        <div class="user-chip" id="user-chip">
+          <span class="user-avatar" id="user-avatar" aria-hidden="true"></span>
+          <span class="user-meta">
+            <span class="user-name" id="user-name">Signed in</span>
+            <span class="user-email" id="user-email"></span>
+          </span>
+          <button class="btn tertiary logout" id="logout" type="button">Sign out</button>
+        </div>
       </div>
     </div>
   </header>
+
+  <p class="boot-err" id="boot-err" hidden>Could not reach the session service. <a href="/">Return to sign-in</a>.</p>
 
   <main class="shell">
     <section class="console" aria-label="Validator workspace">
@@ -192,5 +202,6 @@
   </main>
 
   <script src="/validator.js"></script>
+  <script src="/auth.js"></script>
 </body>
 </html>
