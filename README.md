@@ -1,13 +1,17 @@
 # PAN / Aadhaar Format Validator
 
 A **Core Java** web application that validates the **format** of Indian **PAN** and **Aadhaar**
-numbers. The validation engine, HTTP server, and API are all plain Java. There is **no Spring
-Boot, no database, and no external runtime dependency**. The frontend is static HTML/CSS/vanilla
-JS served by the Java server.
+numbers. The validation engine, HTTP server, auth/session layer, and API are all plain Java. There
+is **no Spring Boot, no database, and no stored user/document state**. The frontend is static
+HTML/CSS/vanilla JS served by the Java server. Users sign in with Google; Java verifies the ID
+token, mints a signed stateless session cookie, and protects the validator. The only runtime
+dependency is Google's `google-api-client` (used solely for ID-token signature/audience/issuer
+verification).
 
 > **Disclaimer:** Format validation is **not** identity verification. This tool cannot confirm
 > whether a PAN or Aadhaar was actually issued by the Income Tax Department or UIDAI. It only
-> checks structural rules and (for Aadhaar) the Verhoeff checksum.
+> checks structural rules and (for Aadhaar) the Verhoeff checksum. Google sign-in only identifies
+> the *user*; it does not verify any document number.
 
 ---
 
@@ -27,6 +31,8 @@ the API, and the runtime**, with zero application-framework overhead. It is also
 |------|--------|
 | Language / runtime | Java 21 (OpenJDK / Temurin-compatible) |
 | HTTP server | `com.sun.net.httpserver.HttpServer` (JDK built-in) |
+| Auth | Google Identity Services (frontend) + `GoogleIdTokenVerifier` (server-side, `google-api-client`) |
+| Session | Signed stateless HMAC-SHA256 cookie — no session store, no database |
 | Build | Maven |
 | Tests | JUnit 5 |
 | Frontend | Static HTML + CSS + vanilla JS |
@@ -97,7 +103,8 @@ mvn package
 java -jar target/pan-aadhaar-validator-1.0.0.jar
 
 # Open the app
-#   http://localhost:8080
+#   http://localhost:8080          (public landing)
+#   http://localhost:8080/app      (protected validator, requires sign-in)
 ```
 
 Use a custom port:
@@ -106,6 +113,65 @@ Use a custom port:
 PORT=9000 java -jar target/pan-aadhaar-validator-1.0.0.jar
 # or
 java -jar target/pan-aadhaar-validator-1.0.0.jar 9000
+```
+
+### Authentication & session
+
+`/` is a public landing page; `/app` and the validator APIs (`/api/validate`,
+`/api/extract-and-validate`) require a signed session. The flow is:
+
+1. The browser loads Google Identity Services and the user signs in.
+2. GIS returns a Google **ID token** (a signed JWT).
+3. The browser POSTs it to `POST /api/auth/google` (same-origin checked).
+4. Java verifies the token with `GoogleIdTokenVerifier` (signature, `aud`, `iss`,
+   `exp`), extracts `sub`/email/name/picture, and issues an **HMAC-SHA256-signed,
+   stateless, HTTP-only cookie** (`HttpOnly; SameSite=Lax; Path=/; Secure` in prod).
+5. `/app` and protected APIs require that cookie; tampered/expired cookies are rejected.
+6. `POST /api/auth/logout` clears the cookie. `GET /api/auth/me` returns the current user.
+
+`sub` (Google's stable account id) is the only user key; email is informational.
+
+#### Configuration
+
+| Variable | Required | Default | Purpose |
+|----------|----------|---------|---------|
+| `GOOGLE_CLIENT_ID` | yes (prod) | — | Web OAuth client id (audience check) |
+| `SESSION_SECRET` | yes (prod) | — | HMAC key for the session cookie (≥ 16 chars) |
+| `SESSION_TTL_SECONDS` | no | `28800` (8h) | Cookie / session lifetime |
+| `COOKIE_SECURE` | no | `true` | Set `false` only for `http://localhost` |
+| `DEV_BYPASS_AUTH` | no | `false` | Local-only bypass (see below) |
+| `ENABLE_CLOUD_VISION` | no | `false` | Legacy cloud image extraction (off by default) |
+
+If required config is missing, startup fails fast with a clear remediation message.
+
+#### Local development (without Google)
+
+For local testing without a Google OAuth client, use the dev bypass. It mints a real signed
+session cookie for a fixed dev user via `POST /api/auth/dev-login`, exercising the same cookie
+machinery without calling Google. The landing page shows a **Continue locally** button instead of
+the Google button.
+
+```bash
+DEV_BYPASS_AUTH=true COOKIE_SECURE=false SESSION_SECRET=local-dev-secret \
+  java -jar target/pan-aadhaar-validator-1.0.0.jar 8080
+```
+
+`DEV_BYPASS_AUTH=true` is **refused on Fly** (detected via `FLY_APP_NAME`), so it can never reach
+production. Never `fly secrets set` it.
+
+#### Local development (with real Google)
+
+1. Create a **Web application** OAuth client in the Google Cloud Console
+   (APIs & Services → Credentials).
+2. Under **Authorized JavaScript origins**, add `http://localhost:8080` (and your deploy URL).
+   No redirect URIs are needed (this uses the token callback flow).
+3. Run with the client id and a strong secret:
+
+```bash
+GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com \
+SESSION_SECRET=a-long-random-secret \
+COOKIE_SECURE=false \
+  java -jar target/pan-aadhaar-validator-1.0.0.jar 8080
 ```
 
 ---
@@ -119,11 +185,25 @@ curl 'http://localhost:8080/api/health'
 # {"status":"UP","service":"pan-aadhaar-validator","version":"1.0.0"}
 ```
 
+`/api/health` is public (used by the Fly health probe).
+
+### Auth
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET`  | `/api/auth/config` | public | `{mode, googleClientId}` — landing picks the button |
+| `POST` | `/api/auth/google` | same-origin | body `{credential}` → verifies ID token, sets session cookie |
+| `POST` | `/api/auth/dev-login` | same-origin | dev-bypass only — mints a dev session cookie |
+| `GET`  | `/api/auth/me` | session | current user (`sub`/`email`/`name`/`picture`), else `401` |
+| `POST`| `/api/auth/logout` | same-origin | clears the session cookie |
+
+Unauthenticated requests to `/app` redirect to `/`; protected APIs return `401` JSON.
+
 ### Validate
 
 The API supports **two methods**. `POST` is preferred — it keeps PAN/Aadhaar values out of
 URLs and server access logs (stronger privacy/KYC hygiene). `GET` is retained for demos and
-backward compatibility.
+backward compatibility. **Both require a valid session cookie.**
 
 **`POST /api/validate`** (preferred) — `Content-Type: application/json`:
 
@@ -203,15 +283,23 @@ docker run --rm -p 8080:8080 -e PORT=8080 pan-aadhaar-validator
 ```bash
 fly auth login
 fly apps create pan-aadhaar-validator        # if the name is taken, append a suffix
+
+# Set the required auth secrets (do NOT set DEV_BYPASS_AUTH)
+fly secrets set GOOGLE_CLIENT_ID=xxxx.apps.googleusercontent.com
+fly secrets set SESSION_SECRET=$(openssl rand -base64 48)
+
 fly deploy                                    # builds + deploys (remote builder if no local Docker)
 fly apps open                                 # opens https://pan-aadhaar-validator.fly.dev
 curl https://pan-aadhaar-validator.fly.dev/api/health
 ```
 
+In the Google Cloud Console, add `https://<your-app>.fly.dev` to the OAuth client's
+**Authorized JavaScript origins**.
+
 `fly.toml` is preconfigured: `internal_port = 8080`, `force_https = true`,
 `auto_stop_machines = true`, `auto_start_machines = true`, `min_machines_running = 0`, with a
-health check on `/api/health`. Region defaults to `bom` (Mumbai); change `primary_region` to
-suit your audience.
+health check on `/api/health` (which is public, so Fly's prober needs no session). Region
+defaults to `sin` (Singapore); change `primary_region` to suit your audience.
 
 ---
 
