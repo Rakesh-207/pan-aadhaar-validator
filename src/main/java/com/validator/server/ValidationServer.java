@@ -562,6 +562,13 @@ public final class ValidationServer {
                 if (path.startsWith("/tesseract/")) {
                     ex.getResponseHeaders().set(
                             "Cache-Control", "public, max-age=604800, immutable");
+                } else if (path.endsWith(".html") || path.endsWith(".js") || path.endsWith(".css")) {
+                    // App shell + assets must always revalidate, otherwise stale
+                    // JS/CSS (e.g. an older GIS renderButton config) keeps being
+                    // served from heuristic cache after a deploy. HTML is marked
+                    // no-cache so new ?v= asset URLs are always discovered.
+                    ex.getResponseHeaders().set(
+                            "Cache-Control", "no-cache, must-revalidate");
                 }
                 ex.sendResponseHeaders(200, body.length);
                 try (OutputStream os = ex.getResponseBody()) {

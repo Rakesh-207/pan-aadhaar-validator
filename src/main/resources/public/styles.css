@@ -485,10 +485,28 @@ input#value:focus { border-color: var(--accent); background: var(--surface); box
    force error banners visible regardless of state. */
 .hidden, [hidden] { display: none !important; }
 
-/* GIS button container: no chrome. The official Google button renders itself
-   inside this slot as an iframe; the parent must contribute no background,
-   padding, border, or fixed box so no "white slab" wraps the button. */
-.g-signin-slot { display: inline-flex; align-items: center; justify-content: center; background: transparent; padding: 0; border: 0; margin: 0; min-width: 0; min-height: 0; }
+/* GIS button mount: chrome-less and shrink-wraps the official Google button.
+   The official button (rendered by GIS inside this slot) is the ONLY element
+   permitted to show a background/border here. The mount itself and any
+   GIS-injected structural wrapper must contribute no white slab: transparent,
+   zero padding/margin/border/shadow, fit-content sizing so it never forms a
+   fixed/min-width rectangle behind the rounded pill. */
+.g-signin-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: fit-content;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  line-height: 0;
+  overflow: visible;
+  min-width: 0;
+  min-height: 0;
+}
 .g-signin-slot iframe { display: block; }
 
 /* Auth Meta & Footer */
